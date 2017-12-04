@@ -11,7 +11,7 @@ export function tokenize(chars) {
   return chars.replace(/\(/g, ' ( ')
               .replace(/\)/g, ' ) ')
               .split(' ')
-              .filter( v => v !== '');
+              .filter( v => (v !== '' && v !== '\n'));
 }
 
 
@@ -97,12 +97,12 @@ export function slipEval(exp, env=global_env) {
 
   //SPECIAL FORMS
   else if (exp[0] === 'if'){
-    var [_, test, conseq, alt] = exp;
+    var [i, test, conseq, alt] = exp;
     var newExp = slipEval(test, env) ? conseq : alt;
     return slipEval(newExp, env);  
   }
   else if (exp[0] === 'define'){
-    var [_, symbol, valExp] = exp
+    var [d, symbol, valExp] = exp
     return env.names[symbol] = slipEval(valExp, env);
   }
 
@@ -110,19 +110,17 @@ export function slipEval(exp, env=global_env) {
   //So far names cannot hold functions and there
   //isn't a way to define new functions. 
   else if(typeof env.procedures[exp[0]] === 'function'){
-    var first, rest;
-    [first, ...rest] = exp;
+    var [first, ...rest] = exp;
     
     var proc = env.procedures[first];
     
     return proc.apply(null, rest.map((v) => {
-        //console.log(v)
         return slipEval(v, env)
       }));
   } 
   else if(!env.names[exp] || !env.procedures[exp]) {
-    throw new SyntaxError(exp + ' not defined')
-    return;
+    var badEx = Array.isArray(exp) ? exp[0] : exp;
+    throw new SyntaxError(badEx + ' is not defined')
   }
   
   
@@ -131,10 +129,23 @@ export function slipEval(exp, env=global_env) {
 
 }
 
-function slip (programInput) {
+export function schemeString(exp){
+  if(Array.isArray(exp))
+    return '(' + exp.map(schemeString).join(' ') + ')'
+  else
+    return '(' + exp + ')'
+}
 
+function Slip (programInput) {
+  try {
+    var val = slipEval(parse(programInput))
+    return val ? schemeString(val) : 'error?'
+  }
+  catch(e){
+    return 'Error: ' + e.message;
+  }
 }
 
 
 
-export default slip;
+export default Slip;
