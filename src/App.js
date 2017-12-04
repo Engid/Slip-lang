@@ -1,8 +1,16 @@
+
 import React, { Component } from 'react';
-import logo from './logo.svg';
+import {Controlled as CodeMirror} from 'react-codemirror2';
 import './App.css';
 import Slip from './Slip'
 //import slip from 'slip';
+require('codemirror/lib/codemirror.css');
+require('codemirror/theme/material.css');
+require('codemirror/theme/neat.css');
+require('codemirror/mode/scheme/scheme.js');
+
+
+
 
 class CodeForm extends Component {
   constructor(props) {
@@ -21,21 +29,37 @@ class CodeForm extends Component {
   }
 
   handleSubmit(event) {
-    //alert('An essay was submitted: ' + this.state.value);
-    event.preventDefault();
+    if(event) event.preventDefault();
     this.setState((prevState, p) => {
       return {eval: Slip(prevState.value)}
     });
   }
 
   render() {
+    var options = {
+			lineNumbers: true,
+		};
     return (
       <form onSubmit={this.handleSubmit}>
         <label>
           <h2>Code:</h2>
-          <textarea value={this.state.value} onChange={this.handleChange} />
+          <CodeMirror
+            value={this.state.value}
+            options={options}
+            onBeforeChange={(editor, data, value) => {
+              this.setState({value});
+            }}
+            onChange={(editor, data, value) => {
+            }}
+          />        
         </label>
-        <input type="submit" value="Submit" />
+        <input type="submit" 
+          value="Run" 
+          onKeyPress={ (e) => {
+            if(e.keyCode === 13 && e.ctrlKey)
+              this.handleSubmit()
+          }
+        } />
         <div>
           <h2>Output:</h2>
           <div>{this.state.eval}</div>
